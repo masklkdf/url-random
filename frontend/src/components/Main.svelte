@@ -379,7 +379,9 @@
         selectorPrimaryFocus="#category"
         on:click:button--secondary={() => (categoryModal = false)}
         on:open
-        on:close
+        on:close={() => {
+            addCategoryValue = '';
+        }}
         on:submit={handleCategorySubmit}
     >
         <TextInput
@@ -401,7 +403,9 @@
         selectorPrimaryFocus="#url"
         on:click:button--secondary={() => (urlModal = false)}
         on:open
-        on:close
+        on:close={() => {
+            addUrlValue = '';
+        }}
         on:submit={handleUrlSubmit}
     >
         <TextInput
