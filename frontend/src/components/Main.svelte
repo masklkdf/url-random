@@ -23,11 +23,15 @@
     let categorySearch = ''; // 分类搜索
     let categoryModal = false; // 分类添加弹窗控制
     let addCategoryValue = ''; // 新增分类
+    let categoryInvalidText = ''; // 分类无效信息
+    $: categoryInvalidText = handleCategoryValida(addCategoryValue); // 监听分类信息修改校验信息
 
     let urls = []; // 当前分类的url集合
     let urlSearch = ''; // url搜索
     let addUrlValue = ''; // 新增url
     let urlModal = false;
+    let urlInvalidText = ''; // url无效信息
+    $: urlInvalidText = handleUrlValida(addUrlValue); // 监听分类信息修改校验信息
 
     let first = false;
     onMount(async () => {
@@ -82,6 +86,7 @@
             }
         }
     }, 200);
+
     // 处理分类删除
     const handleCategoryDelete = async (item) => {
         const res = await apiFetch('/category/delete', {
@@ -100,12 +105,20 @@
                     currentCategory = categories[0];
                     clickCategory();
                 } else {
+                    currentCategory = '';
                     urls = [];
                 }
             }
         } else {
             notify('删除失败，' + res.statusText, 'error');
         }
+    };
+
+    // 处理分类验证
+    const handleCategoryValida = (value) => {
+        if (!value) return '不可为空';
+        if (categories.includes(value)) return '分类重复';
+        return '';
     };
 
     // 处理分类点击
@@ -119,6 +132,7 @@
 
     // 处理分类添加
     const handleCategorySubmit = async () => {
+        if (handleCategoryValida(addCategoryValue)) return;
         const res = await apiFetch('/category/add', {
             method: 'POST',
             body: JSON.stringify({
@@ -163,6 +177,15 @@
             ).urls || [];
         urls = urlArr.filter((item) => item.includes(urlSearch));
     }, 200);
+
+    const URL_REGEXP =
+        /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()!@:%_\+.~#?&\/\/=]*)/;
+    // 处理URL验证
+    const handleUrlValida = (value) => {
+        if (!URL_REGEXP.test(value)) return '格式不正确';
+        if (urls && urls.includes(value)) return 'url重复';
+        return '';
+    };
 
     // 处理url删除
     const handleUrlDelete = async (item) => {
@@ -304,8 +327,10 @@
                 }}
             />
             <Button kind="tertiary" on:click={handleUrlSearch}>搜索</Button>
-            <Button kind="tertiary" on:click={() => (urlModal = true)}
-                >新增URL</Button
+            <Button
+                kind="tertiary"
+                disabled={!currentCategory}
+                on:click={() => (urlModal = true)}>新增URL</Button
             >
         </div>
         <div>
@@ -319,9 +344,9 @@
                     </StructuredListRow>
                 </StructuredListHead>
                 <!-- 内容 -->
-                <StructuredListBody>
-                    <!-- 数据项 -->
-                    {#if urls != null && urls.length > 0}
+                {#if urls && urls.length > 0}
+                    <StructuredListBody>
+                        <!-- 数据项 -->
                         {#each urls as item}
                             <StructuredListRow>
                                 <StructuredListCell>
@@ -338,8 +363,8 @@
                                 </StructuredListCell>
                             </StructuredListRow>
                         {/each}
-                    {/if}
-                </StructuredListBody>
+                    </StructuredListBody>
+                {/if}
             </StructuredList>
         </div>
     </div>
@@ -359,6 +384,8 @@
     >
         <TextInput
             id="category"
+            invalid={!!categoryInvalidText}
+            invalidText={categoryInvalidText}
             labelText="分类名称"
             placeholder="请输入分类名称"
             bind:value={addCategoryValue}
@@ -379,6 +406,8 @@
     >
         <TextInput
             id="url"
+            invalid={!!urlInvalidText}
+            invalidText={urlInvalidText}
             labelText="URL"
             placeholder="请输入URL"
             bind:value={addUrlValue}
